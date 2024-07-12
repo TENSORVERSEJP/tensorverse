@@ -3,7 +3,7 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* 上寄せに変更 */
   height: 100vh;
   font-family: 'Lato', sans-serif;
   background-color: #f5f5f5;
@@ -11,6 +11,7 @@ body {
 
 .container {
   text-align: center;
+  margin-top: 20px; /* 上部に少しマージンを追加して上寄せ */
 }
 
 .title-logo {
@@ -21,12 +22,12 @@ body {
 }
 
 h1 {
-  font-size: 3em;
+  font-size: 2em;
   margin-right: 20px;
 }
 
 img {
-  height: 3em; /* タイトルの高さの3倍に調整 */
+  height: 2%; /* タイトルの高さの3倍に調整 */
   width: auto;
 }
 
@@ -37,10 +38,10 @@ img {
   }
 
   h1 {
-    font-size: 2em; /* スマホ表示時のフォントサイズ調整 */
+    font-size: 1.5em; /* スマホ表示時のフォントサイズ調整 */
   }
 
   img {
-    height: 2em; /* スマホ表示時の画像高さ調整 */
+    height: 1.5em; /* スマホ表示時の画像高さ調整 */
   }
 }
