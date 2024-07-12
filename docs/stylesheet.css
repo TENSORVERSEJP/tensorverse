@@ -17,6 +17,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 20px; /* デフォルトの左右マージン */
 }
 
 h1 {
@@ -25,5 +26,21 @@ h1 {
 }
 
 img {
-  height: 3em;
+  height: 3em; /* タイトルの高さの3倍に調整 */
+  width: auto;
+}
+
+/* スマホ表示を考慮したメディアクエリ */
+@media (max-width: 768px) {
+  .title-logo {
+    margin: 0 10px; /* スマホ表示時の左右マージン */
+  }
+
+  h1 {
+    font-size: 2em; /* スマホ表示時のフォントサイズ調整 */
+  }
+
+  img {
+    height: 2em; /* スマホ表示時の画像高さ調整 */
+  }
 }
