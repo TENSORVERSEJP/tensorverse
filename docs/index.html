@@ -6,109 +6,6 @@
     <title>TENSORVERSE</title>
     <link rel="stylesheet" href="stylesheet.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* ここに上記のCSSを追加 */
-        body {
-          margin: 0;
-          padding: 0;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-          height: 100vh;
-          font-family: 'Lato', sans-serif;
-          background-color: #f5f5f5;
-        }
-
-        .container {
-          text-align: center;
-        }
-
-        .title-logo {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 20px; /* デフォルトの左右マージン */
-        }
-
-        h1 {
-          font-size: 2em;
-          margin-right: 20px;
-        }
-
-        img {
-          height: 2em; /* タイトルの高さの3倍に調整 */
-          width: auto;
-        }
-
-        button#uploadButton {
-          background-color: #4CAF50; /* 緑色 */
-          color: white;
-          padding: 15px 32px;
-          text-align: center;
-          text-decoration: none;
-          display: inline-block;
-          font-size: 16px;
-          margin: 10px 0;
-          cursor: pointer;
-          border: none;
-          border-radius: 4px;
-          transition: background-color 0.3s ease;
-        }
-
-        button#uploadButton:hover {
-          background-color: #45a049; /* ホバー時の色 */
-        }
-
-        /* スマホ表示を考慮したメディアクエリ */
-        @media (max-width: 768px) {
-          .title-logo {
-            margin: 0 10px; /* スマホ表示時の左右マージン */
-          }
-
-          h1 {
-            font-size: 2em; /* スマホ表示時のフォントサイズ調整 */
-          }
-
-          img {
-            height: 2em; /* スマホ表示時の画像高さ調整 */
-          }
-
-          button#uploadButton {
-            width: 100%; /* スマホ表示時にボタンを幅いっぱいに */
-          }
-        }
-
-        .upload-container {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column; /* 縦方向に配置 */
-            align-items: center;
-            gap: 20px;
-        }
-        .input-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        input[type="password"] {
-            width: 250px; /* 横幅を少し短く */
-        }
-        .image-preview {
-            max-width: 800px; 
-            max-height: 800px; 
-            width: auto;     
-            height: auto;
-            margin: 10px; /* 画像の間に余白を追加 */
-        }
-        .image-preview.hidden {
-            display: none;
-        }
-        .preview-section {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -125,6 +22,9 @@
             <div class="preview-section">
                 <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
                 <img id="processedImage" class="image-preview hidden" alt="Processed Image">
+                <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
+                    <div class="loading-spinner"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -147,11 +47,18 @@
             const apiKeyInput = document.getElementById('apiKeyInput');
             const file = fileInput.files[0];
             const apiKey = apiKeyInput.value;
+
             if (file) {
+                // ボタンのテキストを変更し、スピナーを表示
+                const uploadButton = document.getElementById('uploadButton');
+                const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
+                uploadButton.disabled = true;
+                uploadButton.textContent = 'Processing...';
+                loadingSpinnerOverlay.classList.remove('hidden');
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const base64ImageString = e.target.result.split(',')[1];
-
                     const payload = {
                         image: base64ImageString,
                         code: ''
@@ -171,9 +78,18 @@
                         const processedImage = document.getElementById('processedImage');
                         processedImage.src = 'data:image/jpeg;base64,' + base64OutputImg;
                         processedImage.classList.remove('hidden');
+
+                        // 処理が完了したらボタンとスピナーを元に戻す
+                        uploadButton.disabled = false;
+                        uploadButton.textContent = 'Submit';
+                        loadingSpinnerOverlay.classList.add('hidden');
                     })
                     .catch(error => {
                         console.error('Error:', error);
+                        // エラーが発生してもボタンとスピナーを元に戻す
+                        uploadButton.disabled = false;
+                        uploadButton.textContent = 'Submit';
+                        loadingSpinnerOverlay.classList.add('hidden');
                     });
                 }
                 reader.readAsDataURL(file);
