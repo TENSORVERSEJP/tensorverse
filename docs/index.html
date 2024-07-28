@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="sidebar">
+        <div class="tab" onclick="selectModel('model1')">台形補正</div>
+        <div class="tab" onclick="selectModel('model2')">物体検出</div>
+    </div>
     <div class="container">
         <div class="title-logo">
             <h1>TENSORVERSE</h1>
@@ -29,6 +33,21 @@
         </div>
     </div>
     <script>
+        let selectedModelUrl = 'https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas';
+
+        function selectModel(model) {
+            switch (model) {
+                case 'model1':
+                    selectedModelUrl = 'https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas';
+                    break;
+                case 'model2':
+                    selectedModelUrl = 'https://649vecmu32.execute-api.ap-northeast-1.amazonaws.com/tas';
+                    break;
+            }
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.tab[onclick="selectModel('${model}')"]`).classList.add('active');
+        }
+
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -49,7 +68,6 @@
             const apiKey = apiKeyInput.value;
 
             if (file) {
-                // ボタンのテキストを変更し、スピナーを表示
                 const uploadButton = document.getElementById('uploadButton');
                 const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
                 uploadButton.disabled = true;
@@ -64,7 +82,7 @@
                         code: ''
                     };
 
-                    fetch('https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas', {
+                    fetch(selectedModelUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -79,14 +97,12 @@
                         processedImage.src = 'data:image/jpeg;base64,' + base64OutputImg;
                         processedImage.classList.remove('hidden');
 
-                        // 処理が完了したらボタンとスピナーを元に戻す
                         uploadButton.disabled = false;
                         uploadButton.textContent = 'Submit';
                         loadingSpinnerOverlay.classList.add('hidden');
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        // エラーが発生してもボタンとスピナーを元に戻す
                         uploadButton.disabled = false;
                         uploadButton.textContent = 'Submit';
                         loadingSpinnerOverlay.classList.add('hidden');
