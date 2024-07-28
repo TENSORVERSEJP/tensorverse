@@ -10,6 +10,7 @@
 <body onload="selectModel('model1')">
     <div class="sidebar">
         <div class="tab" onclick="selectModel('model1')">物体検出</div>
+        <div class="tab" onclick="selectModel('model3')">背景除去</div>
         <div class="tab" onclick="selectModel('model2')">台形補正</div>
     </div>
     <div class="container">
@@ -42,6 +43,9 @@
                     break;
                 case 'model2':
                     selectedModelUrl = 'https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas';
+                    break;
+                case 'model3':
+                    selectedModelUrl = 'https://ikpjy7mps4.execute-api.ap-northeast-1.amazonaws.com/tas';
                     break;
             }
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
