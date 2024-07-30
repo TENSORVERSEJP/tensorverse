@@ -205,3 +205,36 @@ button#toggleApiKey:hover {
       width: auto;
   }
 }
+
+.file-name-display {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+.sample-images-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.sample-images-section h2 {
+  margin-bottom: 10px;
+}
+
+.additional-images-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.additional-image {
+  width: 120px; /* Adjust the size as needed */
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.additional-image:hover {
+  transform: scale(1.1);
+}

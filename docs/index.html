@@ -33,6 +33,14 @@
                     <div class="loading-spinner"></div>
                 </div>
             </div>
+            <div class="sample-images-section">
+                <h2>Sample Images</h2>
+                <div class="additional-images-container">
+                    <img src="https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo01.jpg" alt="Additional Image 1" class="additional-image" id="additionalImage1">
+                    <img src="https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo15.jpg" alt="Additional Image 2" class="additional-image" id="additionalImage2">
+                    <img src="https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo07.jpg" alt="Additional Image 3" class="additional-image" id="additionalImage3">
+                </div>
+            </div>
         </div>
     </div>
     <script>
@@ -79,6 +87,11 @@
             const file = fileInput.files[0];
             const apiKey = apiKeyInput.value;
 
+            if (!apiKey) {
+                alert('Please enter your API key.');
+                return;
+            }
+
             if (file) {
                 const uploadButton = document.getElementById('uploadButton');
                 const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -102,7 +115,12 @@
                         },
                         body: JSON.stringify(payload),
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Invalid API key or request failed');
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         const base64OutputImg = JSON.parse(data.body).image;
                         const processedImage = document.getElementById('processedImage');
@@ -114,7 +132,7 @@
                         loadingSpinnerOverlay.classList.add('hidden');
                     })
                     .catch(error => {
-                        console.error('Error:', error);
+                        alert(error.message);
                         uploadButton.disabled = false;
                         uploadButton.textContent = 'Submit';
                         loadingSpinnerOverlay.classList.add('hidden');
@@ -125,6 +143,42 @@
                 alert('Please select an image file first.');
             }
         });
+
+        document.getElementById('additionalImage1').addEventListener('click', function() {
+            setImageAsFileInput('https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo01.jpg');
+        });
+
+        document.getElementById('additionalImage2').addEventListener('click', function() {
+            setImageAsFileInput('https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo15.jpg');
+        });
+
+        document.getElementById('additionalImage3').addEventListener('click', function() {
+            setImageAsFileInput('https://raw.githubusercontent.com/DepthAnything/Depth-Anything-V2/main/assets/examples/demo07.jpg');
+        });
+
+        function setImageAsFileInput(imageUrl) {
+            fetch(imageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    const fileInput = document.getElementById('fileInput');
+                    fileInput.files = dataTransfer.files;
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imagePreview = document.getElementById('imagePreview');
+                        imagePreview.src = e.target.result;
+                        imagePreview.classList.remove('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
     </script>
 </body>
 </html>
