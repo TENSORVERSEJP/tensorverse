@@ -9,11 +9,10 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
-        <div class="tab" onclick="selectModel('model1')">物体検出</div>
-        <div class="tab" onclick="selectModel('model4')">セグメンテーション</div>
-        <div class="tab" onclick="selectModel('model5')">深度推定</div>
-        <div class="tab" onclick="selectModel('model3')">背景除去</div>
-        <div class="tab" onclick="selectModel('model2')">台形補正</div>
+        <div class="tab" data-model="objectDetection">物体検出</div>
+        <div class="tab" data-model="segmentation">セグメンテーション</div>
+        <div class="tab" data-model="depthEstimation">深度推定</div>
+        <div class="tab" data-model="backgroundRemoval">背景除去</div>
     </div>
     <div class="container">
         <div class="title-logo">
@@ -21,6 +20,9 @@
             <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/logo.png" alt="Logo">
         </div>
         <div class="upload-container">
+            <div id="modelDescription" class="model-description">
+                <!-- デフォルトの説明文をここに表示 -->
+            </div>
             <div class="input-section">
                 <input type="password" id="apiKeyInput" placeholder="Enter API Key">
                 <input type="file" id="fileInput" accept="image/*">
@@ -44,61 +46,78 @@
         </div>
     </div>
     <script>
-        let selectedModelUrl = 'https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas';
+        const models = {
+            objectDetection: 'https://649vecmu32.execute-api.ap-northeast-1.amazonaws.com/tas',
+            backgroundRemoval: 'https://ikpjy7mps4.execute-api.ap-northeast-1.amazonaws.com/tas',
+            segmentation: 'https://7plx8cens8.execute-api.ap-northeast-1.amazonaws.com/tas',
+            depthEstimation: 'https://sw97avsdr8.execute-api.ap-northeast-1.amazonaws.com/tas'
+        };
 
+        const modelDescriptions = {
+            objectDetection: "物体検出: 画像内の物体を検出し、対応するバウンディングボックスを出力します。",
+            segmentation: "セグメンテーション: 画像の各ピクセルをクラスに分類し、対象領域をマスクとして出力します。",
+            depthEstimation: "深度推定: 画像内の各ピクセルの深度を推定し、距離情報を取得します。",
+            backgroundRemoval: "背景除去: 画像から前景と背景を分離し、背景を除去します。"
+        };
+
+        let selectedModelUrl = models.objectDetection;
+
+        // Cookie management functions
         function setCookie(name, value, days) {
             const d = new Date();
-            d.setTime(d.getTime() + (days*24*60*60*1000));
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
             const expires = "expires=" + d.toUTCString();
-            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+            document.cookie = `${name}=${value}; ${expires}; path=/`;
         }
 
         function getCookie(name) {
-            const cname = name + "=";
+            const cname = `${name}=`;
             const decodedCookie = decodeURIComponent(document.cookie);
             const ca = decodedCookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') {
-                    c = c.substring(1);
-                }
-                if (c.indexOf(cname) == 0) {
+            for (let c of ca) {
+                c = c.trim();
+                if (c.indexOf(cname) === 0) {
                     return c.substring(cname.length, c.length);
                 }
             }
             return "";
         }
 
+        // Initialize the page
         function initializePage() {
-            selectModel('model1');
+            selectModel('objectDetection');
             const savedApiKey = getCookie("apiKey");
-            if (savedApiKey != "") {
+            if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
+            updateDescription('objectDetection'); // デフォルトで物体検出の説明を表示
         }
 
-        function selectModel(model) {
-            switch (model) {
-                case 'model1':
-                    selectedModelUrl = 'https://649vecmu32.execute-api.ap-northeast-1.amazonaws.com/tas';
-                    break;
-                case 'model2':
-                    selectedModelUrl = 'https://66p5ibvn4i.execute-api.ap-northeast-1.amazonaws.com/tas';
-                    break;
-                case 'model3':
-                    selectedModelUrl = 'https://ikpjy7mps4.execute-api.ap-northeast-1.amazonaws.com/tas';
-                    break;
-                case 'model4':
-                    selectedModelUrl = 'https://7plx8cens8.execute-api.ap-northeast-1.amazonaws.com/tas';
-                    break;
-                case 'model5':
-                    selectedModelUrl = 'https://sw97avsdr8.execute-api.ap-northeast-1.amazonaws.com/tas';
-                    break;
+        // Select model based on model name
+        function selectModel(modelName) {
+            if (models[modelName]) {
+                selectedModelUrl = models[modelName];
+                setActiveTab(modelName);
+                updateDescription(modelName);
+            } else {
+                console.error(`Model "${modelName}" is not defined.`);
             }
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`.tab[onclick="selectModel('${model}')"]`).classList.add('active');
         }
 
+        // Set the active tab visually
+        function setActiveTab(modelName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.model === modelName);
+            });
+        }
+
+        // Update the description based on selected model
+        function updateDescription(modelName) {
+            const descriptionElement = document.getElementById('modelDescription');
+            descriptionElement.textContent = modelDescriptions[modelName];
+        }
+
+        // Handle file input change to display image preview
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -112,11 +131,12 @@
             }
         });
 
+        // Handle upload button click
         document.getElementById('uploadButton').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
             const apiKeyInput = document.getElementById('apiKeyInput');
             const file = fileInput.files[0];
-            const apiKey = apiKeyInput.value;
+            const apiKey = apiKeyInput.value.trim();
 
             if (!apiKey) {
                 alert('Please enter your API key.');
@@ -126,11 +146,7 @@
             setCookie("apiKey", apiKey, 30);
 
             if (file) {
-                const uploadButton = document.getElementById('uploadButton');
-                const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
-                uploadButton.disabled = true;
-                uploadButton.textContent = 'Processing...';
-                loadingSpinnerOverlay.classList.remove('hidden');
+                toggleLoadingState(true);
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -155,20 +171,14 @@
                         return response.json();
                     })
                     .then(data => {
-                        const base64OutputImg = JSON.parse(data.body).image;
-                        const processedImage = document.getElementById('processedImage');
-                        processedImage.src = 'data:image/jpeg;base64,' + base64OutputImg;
-                        processedImage.classList.remove('hidden');
-
-                        uploadButton.disabled = false;
-                        uploadButton.textContent = 'Submit';
-                        loadingSpinnerOverlay.classList.add('hidden');
+                        const processedData = JSON.parse(data.body);
+                        const base64OutputImg = processedData.image;
+                        displayProcessedImage(base64OutputImg);
+                        toggleLoadingState(false);
                     })
                     .catch(error => {
                         alert(error.message);
-                        uploadButton.disabled = false;
-                        uploadButton.textContent = 'Submit';
-                        loadingSpinnerOverlay.classList.add('hidden');
+                        toggleLoadingState(false);
                     });
                 }
                 reader.readAsDataURL(file);
@@ -177,24 +187,42 @@
             }
         });
 
-        document.getElementById('additionalImage1').addEventListener('click', function() {
-            setImageAsFileInput('https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample01.jpg');
+        // Toggle loading spinner and button state
+        function toggleLoadingState(isLoading) {
+            const uploadButton = document.getElementById('uploadButton');
+            const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
+            if (isLoading) {
+                uploadButton.disabled = true;
+                uploadButton.textContent = 'Processing...';
+                loadingSpinnerOverlay.classList.remove('hidden');
+            } else {
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Submit';
+                loadingSpinnerOverlay.classList.add('hidden');
+            }
+        }
+
+        // Display the processed image
+        function displayProcessedImage(base64Image) {
+            const processedImage = document.getElementById('processedImage');
+            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
+            processedImage.classList.remove('hidden');
+        }
+
+        // Handle sample images click
+        document.querySelectorAll('.additional-image').forEach(img => {
+            img.addEventListener('click', function() {
+                setImageAsFileInput(img.src);
+            });
         });
 
-        document.getElementById('additionalImage2').addEventListener('click', function() {
-            setImageAsFileInput('https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample02.jpg');
-        });
-
-        document.getElementById('additionalImage3').addEventListener('click', function() {
-            setImageAsFileInput('https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample03.jpg');
-        });
-
+        // Set image as file input from URL
         function setImageAsFileInput(imageUrl) {
             fetch(imageUrl)
                 .then(response => response.blob())
                 .then(blob => {
                     const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+                    const file = new File([blob], fileName, { type: blob.type });
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     const fileInput = document.getElementById('fileInput');
@@ -212,6 +240,14 @@
                     console.error('Error:', error);
                 });
         }
+
+        // Handle tab clicks using event delegation
+        document.querySelector('.sidebar').addEventListener('click', function(event) {
+            if (event.target.classList.contains('tab')) {
+                const modelName = event.target.dataset.model;
+                selectModel(modelName);
+            }
+        });
     </script>
 </body>
 </html>
