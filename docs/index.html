@@ -45,9 +45,10 @@
             </div>
         </div>
     </div>
-    <script src="modelData.js"></script> <!-- モデル情報を外部から読み込む -->
+    <script src="modelData.js"></script>
     <script>
         let selectedModelUrl = models.objectDetection;
+        let compressedFile = null;  // 圧縮されたファイルを保存
 
         // Cookie management functions
         function setCookie(name, value, days) {
@@ -70,17 +71,15 @@
             return "";
         }
 
-        // Initialize the page
         function initializePage() {
             selectModel('objectDetection');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('objectDetection'); // デフォルトで物体検出の説明を表示
+            updateDescription('objectDetection');
         }
 
-        // Select model based on model name
         function selectModel(modelName) {
             if (models[modelName]) {
                 selectedModelUrl = models[modelName];
@@ -91,90 +90,140 @@
             }
         }
 
-        // Set the active tab visually
         function setActiveTab(modelName) {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.model === modelName);
             });
         }
 
-        // Update the description based on selected model
         function updateDescription(modelName) {
             const descriptionElement = document.getElementById('modelDescription');
             descriptionElement.textContent = modelDescriptions[modelName];
         }
 
-        // Handle file input change to display image preview
+        // Handle file input change to display image preview and resize/compress if needed
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const imagePreview = document.getElementById('imagePreview');
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.remove('hidden');
-                }
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const resizedImage = resizeImage(img); // リサイズ処理
+                        compressImage(resizedImage, file, 2);  // 圧縮処理
+                    };
+                };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Handle upload button click
-        document.getElementById('uploadButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('fileInput');
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            const file = fileInput.files[0];
-            const apiKey = apiKeyInput.value.trim();
+        // リサイズ関数（長辺が1920ピクセルになるようにアスペクト比を維持）
+        function resizeImage(img) {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
 
-            if (!apiKey) {
+            const MAX_LENGTH = 1920; // 長辺を1920ピクセルに制限
+
+            if (width > height && width > MAX_LENGTH) {
+                height = height * (MAX_LENGTH / width);
+                width = MAX_LENGTH;
+            } else if (height > width && height > MAX_LENGTH) {
+                width = width * (MAX_LENGTH / height);
+                height = MAX_LENGTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            return canvas;
+        }
+
+        // 圧縮処理（リサイズ後の画像を圧縮）
+        function compressImage(canvas, file, maxSizeMB) {
+            let quality = 0.8; // 圧縮品質を初期値0.8に設定
+            compressLoop(canvas, file, quality, maxSizeMB);
+        }
+
+        // 圧縮を繰り返す関数
+        function compressLoop(canvas, file, quality, maxSizeMB) {
+            canvas.toBlob(function(blob) {
+                if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.1) {
+                    // サイズが2MBを超える場合は圧縮品質を下げて再圧縮
+                    quality -= 0.1;
+                    compressLoop(canvas, file, quality, maxSizeMB);
+                } else {
+                    compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    previewImage(compressedFile);  // 圧縮後の画像をプレビュー
+                }
+            }, 'image/jpeg', quality);
+        }
+
+        // 画像プレビューの関数
+        function previewImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // Submitボタンを押したときにファイルをアップロードして推論を実行
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            if (compressedFile) {  // 圧縮されたファイルが存在する場合
+                uploadImage(compressedFile);
+            } else {
+                alert('Please upload an image first.');
+            }
+        });
+
+        // アップロード処理
+        function uploadImage(file) {
+            const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKeyInput) {
                 alert('Please enter your API key.');
                 return;
             }
 
-            setCookie("apiKey", apiKey, 30);
+            toggleLoadingState(true);
 
-            if (file) {
-                toggleLoadingState(true);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64ImageString = e.target.result.split(',')[1];
+                const payload = {
+                    image: base64ImageString,
+                    code: ''
+                };
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64ImageString = e.target.result.split(',')[1];
-                    const payload = {
-                        image: base64ImageString,
-                        code: ''
-                    };
+                fetch(selectedModelUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKeyInput,
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const processedData = JSON.parse(data.body);
+                    const base64OutputImg = processedData.image;
+                    displayProcessedImage(base64OutputImg);
+                    toggleLoadingState(false);
+                })
+                .catch(error => {
+                    alert(error.message);
+                    toggleLoadingState(false);
+                });
+            };
+            reader.readAsDataURL(file);
+        }
 
-                    fetch(selectedModelUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-api-key': apiKey
-                        },
-                        body: JSON.stringify(payload),
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Invalid API key or request failed');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const processedData = JSON.parse(data.body);
-                        const base64OutputImg = processedData.image;
-                        displayProcessedImage(base64OutputImg);
-                        toggleLoadingState(false);
-                    })
-                    .catch(error => {
-                        alert(error.message);
-                        toggleLoadingState(false);
-                    });
-                }
-                reader.readAsDataURL(file);
-            } else {
-                alert('Please select an image file first.');
-            }
-        });
-
-        // Toggle loading spinner and button state
+        // ローディング状態をトグル
         function toggleLoadingState(isLoading) {
             const uploadButton = document.getElementById('uploadButton');
             const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -189,7 +238,7 @@
             }
         }
 
-        // Display the processed image
+        // 処理された画像を表示
         function displayProcessedImage(base64Image) {
             const processedImage = document.getElementById('processedImage');
             processedImage.src = `data:image/jpeg;base64,${base64Image}`;
@@ -203,24 +252,24 @@
             });
         });
 
-        // Set image as file input from URL
+        // サンプル画像を選択したときの処理
         function setImageAsFileInput(imageUrl) {
             fetch(imageUrl)
                 .then(response => response.blob())
                 .then(blob => {
                     const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
                     const file = new File([blob], fileName, { type: blob.type });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    const fileInput = document.getElementById('fileInput');
-                    fileInput.files = dataTransfer.files;
 
+                    // サンプル画像もリサイズ・圧縮処理
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        const imagePreview = document.getElementById('imagePreview');
-                        imagePreview.src = e.target.result;
-                        imagePreview.classList.remove('hidden');
-                    }
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const resizedImage = resizeImage(img);
+                            compressImage(resizedImage, file, 2); // 圧縮処理をサンプル画像にも適用
+                        };
+                    };
                     reader.readAsDataURL(file);
                 })
                 .catch(error => {
