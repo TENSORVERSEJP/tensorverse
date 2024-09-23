@@ -36,7 +36,7 @@
     </div>
     <script>
         let selectedModelUrl = "https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas";
-        let uploadedFile = null;
+        let compressedFile = null;  // 圧縮されたファイルを保存
 
         // Cookie management functions
         function setCookie(name, value, days) {
@@ -68,16 +68,63 @@
             descriptionElement.textContent = "選択したモデルはトリミングを行います。画像の不要な部分を自動でトリミングします。";
         }
 
-        // ファイル選択時に画像プレビューを表示
+        // Handle file input change to display image preview and resize/compress if needed
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                uploadedFile = file;  // アップロードされたファイルを保持
-                previewImage(file);   // 画像プレビューを表示
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const resizedImage = resizeImage(img); // リサイズ処理
+                        compressImage(resizedImage, file, 2);  // 圧縮処理
+                    };
+                };
+                reader.readAsDataURL(file);
             }
         });
 
-        // 画像プレビューを表示する関数
+        function resizeImage(img) {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            const MAX_LENGTH = 1920;
+
+            if (width > height && width > MAX_LENGTH) {
+                height = height * (MAX_LENGTH / width);
+                width = MAX_LENGTH;
+            } else if (height > width && height > MAX_LENGTH) {
+                width = width * (MAX_LENGTH / height);
+                height = MAX_LENGTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            return canvas;
+        }
+
+        function compressImage(canvas, file, maxSizeMB) {
+            let quality = 0.8;
+            compressLoop(canvas, file, quality, maxSizeMB);
+        }
+
+        function compressLoop(canvas, file, quality, maxSizeMB) {
+            canvas.toBlob(function(blob) {
+                if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.1) {
+                    quality -= 0.1;
+                    compressLoop(canvas, file, quality, maxSizeMB);
+                } else {
+                    compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    previewImage(compressedFile);
+                }
+            }, 'image/jpeg', quality);
+        }
+
         function previewImage(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -88,16 +135,14 @@
             reader.readAsDataURL(file);
         }
 
-        // Submitボタンを押したときにファイルをアップロードして推論を実行
         document.getElementById('uploadButton').addEventListener('click', function() {
-            if (uploadedFile) {  // ファイルが選択されている場合
-                uploadImage(uploadedFile);
+            if (compressedFile) {
+                uploadImage(compressedFile);
             } else {
                 alert('Please upload an image first.');
             }
         });
 
-        // アップロード処理
         function uploadImage(file) {
             const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
             if (!apiKeyInput) {
@@ -138,7 +183,6 @@
             reader.readAsDataURL(file);
         }
 
-        // ローディング状態をトグル
         function toggleLoadingState(isLoading) {
             const uploadButton = document.getElementById('uploadButton');
             const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -153,7 +197,6 @@
             }
         }
 
-        // 処理された画像を表示
         function displayProcessedImage(base64Image) {
             const processedImage = document.getElementById('processedImage');
             processedImage.src = `data:image/jpeg;base64,${base64Image}`;
