@@ -21,7 +21,8 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
-        <div class="tab active" data-model="trimmingModel">OpenAI API</div>
+        <div class="tab active" data-model="openaiModel">OpenAI API</div>
+        <div class="tab" data-model="geminiModel">GeminiAPI</div> <!-- 新しいモデル -->
     </div>
     <div class="container">
         <div class="title-logo">
@@ -30,7 +31,7 @@
         </div>
         <div class="upload-container">
             <div id="modelDescription" class="model-description">
-                <!-- トリミングモデルの説明文をここに表示 -->
+                <!-- モデルの説明文をここに表示 -->
             </div>
             <div class="input-section">
                 <input type="password" id="apiKeyInput" placeholder="Enter API Key">
@@ -43,13 +44,18 @@
                 <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
                     <div class="loading-spinner"></div>
                 </div>
-                <!-- テキスト表示用の要素 -->
                 <div id="responseTextContainer" class="response-text-container hidden"></div>
             </div>
         </div>
     </div>
     <script>
-        let selectedModelUrl = "https://383vo6hure.execute-api.ap-northeast-1.amazonaws.com/tas";
+        // モデルごとのURLを管理するオブジェクト
+        const modelUrls = {
+            openaiModel: "https://383vo6hure.execute-api.ap-northeast-1.amazonaws.com/tas", // OpenAI API
+            geminiModel: "https://lk5avrbsqc.execute-api.ap-northeast-1.amazonaws.com/tas" // GeminiAPI
+        };
+
+        let selectedModelUrl = modelUrls.openaiModel; // デフォルトのモデルURL
         let compressedFile = null;  // 圧縮されたファイルを保存
 
         // Cookie management functions
@@ -74,13 +80,32 @@
         }
 
         function initializePage() {
-            updateDescription('trimmingModel');
+            updateDescription('openaiModel');
         }
 
         function updateDescription(modelName) {
             const descriptionElement = document.getElementById('modelDescription');
-            descriptionElement.textContent = "画像中の文字を読み取ります。";
+            if (modelName === 'openaiModel') {
+                descriptionElement.textContent = "OpenAI API を用いて画像中の文字を読み取ります。"; // OpenAI APIの説明
+            } else if (modelName === 'geminiModel') {
+                descriptionElement.textContent = "Gemini API を用いて画像中の文字を読み取ります。"; // GeminiAPIの説明
+            }
         }
+
+        // サイドバーモデルタブのクリックイベントを処理
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // 選択されたモデルのURLを更新
+                const selectedModel = this.getAttribute('data-model');
+                selectedModelUrl = modelUrls[selectedModel];
+
+                // モデルの説明を更新
+                updateDescription(selectedModel);
+            });
+        });
 
         // Handle file input change to display image preview and resize/compress if needed
         document.getElementById('fileInput').addEventListener('change', function(event) {
