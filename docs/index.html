@@ -13,6 +13,7 @@
         <div class="tab" data-model="segmentation">セグメンテーション</div>
         <div class="tab" data-model="depthEstimation">深度推定</div>
         <div class="tab" data-model="backgroundRemoval">背景除去</div>
+        <div class="tab" data-model="geminiapiOcr">OCR</div>
     </div>
     <div class="container">
         <div class="title-logo">
@@ -29,10 +30,15 @@
             </div>
             <button id="uploadButton">Submit</button>
             <div class="preview-section">
-                <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
-                <img id="processedImage" class="image-preview hidden" alt="Processed Image">
-                <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
-                    <div class="loading-spinner"></div>
+                <div class="image-column">
+                    <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
+                </div>
+                <div class="result-column">
+                    <img id="processedImage" class="image-preview hidden" alt="Processed Image">
+                    <div id="processedTextOutput" class="image-preview hidden"></div> <!-- 文字を表示するエリア -->
+                    <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
+                        <div class="loading-spinner"></div>
+                    </div>
                 </div>
             </div>
             <div class="sample-images-section">
@@ -41,6 +47,7 @@
                     <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample01.jpg" alt="Additional Image 1" class="additional-image" id="additionalImage1">
                     <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample02.jpg" alt="Additional Image 2" class="additional-image" id="additionalImage2">
                     <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample03.jpg" alt="Additional Image 3" class="additional-image" id="additionalImage3">
+                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample05.jpg" alt="Additional Image 5" class="additional-image" id="additionalImage5">
                 </div>
             </div>
         </div>
@@ -211,8 +218,16 @@
                 .then(response => response.json())
                 .then(data => {
                     const processedData = JSON.parse(data.body);
-                    const base64OutputImg = processedData.image;
-                    displayProcessedImage(base64OutputImg);
+                    
+                    if (processedData.text) {
+                        // テキスト結果の場合は文字列を表示
+                        displayProcessedText(processedData.text);
+                    } else if (processedData.image) {
+                        // 画像結果の場合は画像を表示
+                        const base64OutputImg = processedData.image;
+                        displayProcessedImage(base64OutputImg);
+                    }
+
                     toggleLoadingState(false);
                 })
                 .catch(error => {
@@ -221,6 +236,32 @@
                 });
             };
             reader.readAsDataURL(file);
+        }
+
+        // テキストを表示する関数
+        function displayProcessedText(text) {
+            const processedTextOutput = document.getElementById('processedTextOutput');
+            const processedImage = document.getElementById('processedImage');
+
+            // 画像を隠さない
+            processedImage.classList.add('hidden');
+
+            // テキストに含まれる改行文字を<br>に変換して表示
+            processedTextOutput.innerHTML = text.replace(/\n/g, '<br>');
+            processedTextOutput.classList.remove('hidden');
+        }
+
+        // 処理された画像を表示
+        function displayProcessedImage(base64Image) {
+            const processedImage = document.getElementById('processedImage');
+            const processedTextOutput = document.getElementById('processedTextOutput');
+            
+            // テキストを隠す
+            processedTextOutput.classList.add('hidden');
+
+            // 画像を表示
+            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
+            processedImage.classList.remove('hidden');
         }
 
         // ローディング状態をトグル
@@ -236,13 +277,6 @@
                 uploadButton.textContent = 'Submit';
                 loadingSpinnerOverlay.classList.add('hidden');
             }
-        }
-
-        // 処理された画像を表示
-        function displayProcessedImage(base64Image) {
-            const processedImage = document.getElementById('processedImage');
-            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
-            processedImage.classList.remove('hidden');
         }
 
         // Handle sample images click
