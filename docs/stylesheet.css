@@ -2,29 +2,29 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  height: 100vh; /* 高さをビューポート全体に設定 */
+  height: 100vh;
   font-family: 'Lato', sans-serif;
   background-color: #f5f5f5;
-  overflow: hidden; /* 余計なスクロールバーを隠す */
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 140px; /* 幅を狭くする */
+  width: 140px;
   background-color: #333;
   color: white;
   display: flex;
   flex-direction: column;
-  align-items: center; /* 中央に揃える */
-  justify-content: center; /* 垂直方向に中央に揃える */
-  height: 100vh; /* サイドバーの高さをビューポート全体に */
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
   padding-top: 20px;
 }
 
 .tab {
-  padding: 8px 10px; /* パディングを調整 */
+  padding: 8px 10px;
   cursor: pointer;
   transition: background-color 0.3s;
-  font-size: 12px; /* フォントサイズを調整 */
+  font-size: 12px;
 }
 
 .tab:hover, .tab.active {
@@ -33,19 +33,19 @@ body {
 
 .container {
   text-align: center;
-  margin: 0; /* マージンを除去 */
+  margin: 0;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  align-items: center; /* 中央に配置 */
-  overflow-y: auto; /* 必要に応じて垂直スクロールを許可 */
+  align-items: center;
+  overflow-y: auto;
 }
 
 .title-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px 0; /* 上に詰めるためのマージン調整 */
+  margin: 20px 0;
 }
 
 .upload-container {
@@ -54,13 +54,23 @@ body {
   align-items: center;
   gap: 20px;
   position: relative;
-  margin-top: 20px; /* 上に詰めるためのマージン調整 */
+  margin-top: 20px;
 }
 
 .input-section {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* APIキーの入力欄を大きくする */
+#apiKeyInput {
+    width: 240px;
+    padding: 3px;
+    font-size: 16px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 .input-group {
@@ -230,7 +240,7 @@ button#toggleApiKey:hover {
 }
 
 .additional-image {
-  width: 120px; /* Adjust the size as needed */
+  width: 120px;
   height: auto;
   cursor: pointer;
   transition: transform 0.3s;
