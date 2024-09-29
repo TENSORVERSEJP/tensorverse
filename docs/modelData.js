@@ -9,7 +9,7 @@ const models = {
 const modelDescriptions = {
     objectDetection: "物体検出: 画像内の物体を検出し、対応するバウンディングボックスを出力します。",
     segmentation: "セグメンテーション: 画像の各ピクセルをクラスに分類し、対象領域をマスクとして出力します。",
-    depthEstimation: "深度推定: 画像内の各ピクセルの深度を推定し、距離情報を取得します。",
+    depthEstimation: "深度推定: 画像内の各ピクセルの深度を推定し、距離情報を可視化します。",
     backgroundRemoval: "背景除去: 画像から前景と背景を分離し、背景を除去します。",
     geminiapiOcr: "OCR: 画像中の文字を読み取ります。"
 };
