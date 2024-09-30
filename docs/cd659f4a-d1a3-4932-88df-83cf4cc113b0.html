@@ -9,7 +9,7 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
-        <div class="tab" data-model="trimming20241011">2024.10.11 ver</div>
+        <div class="tab" data-model="trimming20240930">2024.9.30 ver</div>
         <div class="tab" data-model="trimming20240925">2024.9.25 ver</div>
     </div>
     <div class="container">
@@ -51,16 +51,14 @@
     </div>
     <script>
         const models = {
-            trimming20241011: 'https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas',
-            trimming20240925: 'https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas',
+            trimming20240930: 'https://pffirgfhvh.execute-api.ap-northeast-1.amazonaws.com/tas',
+            trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
 
         const modelDescriptions = {
-            // trimming20240925: "",
-            // trimming20241011: "",
         };
 
-        let selectedModelUrl = models.objectDetection;
+        let selectedModelUrl = models.trimming20240925;
         let compressedFile = null;
 
         function setCookie(name, value, days) {
@@ -84,12 +82,12 @@
         }
 
         function initializePage() {
-            selectModel('objectDetection');
+            selectModel('trimming20240930');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('objectDetection');
+            updateDescription('trimming20240930');
         }
 
         function selectModel(modelName) {
