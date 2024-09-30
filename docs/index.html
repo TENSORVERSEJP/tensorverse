@@ -35,7 +35,7 @@
                 </div>
                 <div class="result-column">
                     <img id="processedImage" class="image-preview hidden" alt="Processed Image">
-                    <div id="processedTextOutput" class="image-preview hidden"></div> <!-- 文字を表示するエリア -->
+                    <div id="processedTextOutput" class="image-preview hidden"></div>
                     <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
                         <div class="loading-spinner"></div>
                     </div>
@@ -52,12 +52,26 @@
             </div>
         </div>
     </div>
-    <script src="modelData.js"></script>
     <script>
-        let selectedModelUrl = models.objectDetection;
-        let compressedFile = null;  // 圧縮されたファイルを保存
+        const models = {
+            objectDetection: 'https://649vecmu32.execute-api.ap-northeast-1.amazonaws.com/tas',
+            segmentation: 'https://7plx8cens8.execute-api.ap-northeast-1.amazonaws.com/tas',
+            depthEstimation: 'https://sw97avsdr8.execute-api.ap-northeast-1.amazonaws.com/tas',
+            backgroundRemoval: 'https://ikpjy7mps4.execute-api.ap-northeast-1.amazonaws.com/tas',
+            geminiapiOcr: 'https://lk5avrbsqc.execute-api.ap-northeast-1.amazonaws.com/tas',
+        };
 
-        // Cookie management functions
+        const modelDescriptions = {
+            objectDetection: "物体検出: 画像内の物体を検出し、対応するバウンディングボックスを出力します。",
+            segmentation: "セグメンテーション: 画像の各ピクセルをクラスに分類し、対象領域をマスクとして出力します。",
+            depthEstimation: "深度推定: 画像内の各ピクセルの深度を推定し、距離情報を可視化します。",
+            backgroundRemoval: "背景除去: 画像から前景と背景を分離し、背景を除去します。",
+            geminiapiOcr: "OCR: 画像中の文字を読み取ります。"
+        };
+
+        let selectedModelUrl = models.objectDetection;
+        let compressedFile = null;
+
         function setCookie(name, value, days) {
             const d = new Date();
             d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -108,7 +122,6 @@
             descriptionElement.textContent = modelDescriptions[modelName];
         }
 
-        // Handle file input change to display image preview and resize/compress if needed
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -117,22 +130,20 @@
                     const img = new Image();
                     img.src = e.target.result;
                     img.onload = function() {
-                        const resizedImage = resizeImage(img); // リサイズ処理
-                        compressImage(resizedImage, file, 2);  // 圧縮処理
+                        const resizedImage = resizeImage(img);
+                        compressImage(resizedImage, file, 2);
                     };
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // リサイズ関数（長辺が1920ピクセルになるようにアスペクト比を維持）
         function resizeImage(img) {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
 
-            const MAX_LENGTH = 1920; // 長辺を1920ピクセルに制限
-
+            const MAX_LENGTH = 1920;
             if (width > height && width > MAX_LENGTH) {
                 height = height * (MAX_LENGTH / width);
                 width = MAX_LENGTH;
@@ -149,27 +160,23 @@
             return canvas;
         }
 
-        // 圧縮処理（リサイズ後の画像を圧縮）
         function compressImage(canvas, file, maxSizeMB) {
-            let quality = 0.8; // 圧縮品質を初期値0.8に設定
+            let quality = 0.8;
             compressLoop(canvas, file, quality, maxSizeMB);
         }
 
-        // 圧縮を繰り返す関数
         function compressLoop(canvas, file, quality, maxSizeMB) {
             canvas.toBlob(function(blob) {
                 if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.1) {
-                    // サイズが2MBを超える場合は圧縮品質を下げて再圧縮
                     quality -= 0.1;
                     compressLoop(canvas, file, quality, maxSizeMB);
                 } else {
                     compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                    previewImage(compressedFile);  // 圧縮後の画像をプレビュー
+                    previewImage(compressedFile);
                 }
             }, 'image/jpeg', quality);
         }
 
-        // 画像プレビューの関数
         function previewImage(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -180,16 +187,14 @@
             reader.readAsDataURL(file);
         }
 
-        // Submitボタンを押したときにファイルをアップロードして推論を実行
         document.getElementById('uploadButton').addEventListener('click', function() {
-            if (compressedFile) {  // 圧縮されたファイルが存在する場合
+            if (compressedFile) {
                 uploadImage(compressedFile);
             } else {
                 alert('Please upload an image first.');
             }
         });
 
-        // アップロード処理
         function uploadImage(file) {
             const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
             if (!apiKeyInput) {
@@ -220,12 +225,9 @@
                     const processedData = JSON.parse(data.body);
                     
                     if (processedData.text) {
-                        // テキスト結果の場合は文字列を表示
                         displayProcessedText(processedData.text);
                     } else if (processedData.image) {
-                        // 画像結果の場合は画像を表示
-                        const base64OutputImg = processedData.image;
-                        displayProcessedImage(base64OutputImg);
+                        displayProcessedImage(processedData.image);
                     }
 
                     toggleLoadingState(false);
@@ -238,33 +240,24 @@
             reader.readAsDataURL(file);
         }
 
-        // テキストを表示する関数
         function displayProcessedText(text) {
             const processedTextOutput = document.getElementById('processedTextOutput');
             const processedImage = document.getElementById('processedImage');
 
-            // 画像を隠さない
             processedImage.classList.add('hidden');
-
-            // テキストに含まれる改行文字を<br>に変換して表示
             processedTextOutput.innerHTML = text.replace(/\n/g, '<br>');
             processedTextOutput.classList.remove('hidden');
         }
 
-        // 処理された画像を表示
         function displayProcessedImage(base64Image) {
             const processedImage = document.getElementById('processedImage');
             const processedTextOutput = document.getElementById('processedTextOutput');
             
-            // テキストを隠す
             processedTextOutput.classList.add('hidden');
-
-            // 画像を表示
             processedImage.src = `data:image/jpeg;base64,${base64Image}`;
             processedImage.classList.remove('hidden');
         }
 
-        // ローディング状態をトグル
         function toggleLoadingState(isLoading) {
             const uploadButton = document.getElementById('uploadButton');
             const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -279,14 +272,12 @@
             }
         }
 
-        // Handle sample images click
         document.querySelectorAll('.additional-image').forEach(img => {
             img.addEventListener('click', function() {
                 setImageAsFileInput(img.src);
             });
         });
 
-        // サンプル画像を選択したときの処理
         function setImageAsFileInput(imageUrl) {
             fetch(imageUrl)
                 .then(response => response.blob())
@@ -294,14 +285,13 @@
                     const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
                     const file = new File([blob], fileName, { type: blob.type });
 
-                    // サンプル画像もリサイズ・圧縮処理
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const img = new Image();
                         img.src = e.target.result;
                         img.onload = function() {
                             const resizedImage = resizeImage(img);
-                            compressImage(resizedImage, file, 2); // 圧縮処理をサンプル画像にも適用
+                            compressImage(resizedImage, file, 2);
                         };
                     };
                     reader.readAsDataURL(file);
@@ -311,7 +301,6 @@
                 });
         }
 
-        // Handle tab clicks using event delegation
         document.querySelector('.sidebar').addEventListener('click', function(event) {
             if (event.target.classList.contains('tab')) {
                 const modelName = event.target.dataset.model;
