@@ -9,7 +9,8 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
-        <div class="tab active" data-model="trimmingModel">トリミング</div>
+        <div class="tab" data-model="trimming20241011">2024.10.11 ver</div>
+        <div class="tab" data-model="trimming20240925">2024.9.25 ver</div>
     </div>
     <div class="container">
         <div class="title-logo">
@@ -18,7 +19,7 @@
         </div>
         <div class="upload-container">
             <div id="modelDescription" class="model-description">
-                <!-- トリミングモデルの説明文をここに表示 -->
+                <!-- デフォルトの説明文をここに表示 -->
             </div>
             <div class="input-section">
                 <input type="password" id="apiKeyInput" placeholder="Enter API Key">
@@ -26,19 +27,42 @@
             </div>
             <button id="uploadButton">Submit</button>
             <div class="preview-section">
-                <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
-                <img id="processedImage" class="image-preview hidden" alt="Processed Image">
-                <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
-                    <div class="loading-spinner"></div>
+                <div class="image-column">
+                    <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
+                </div>
+                <div class="result-column">
+                    <img id="processedImage" class="image-preview hidden" alt="Processed Image">
+                    <div id="processedTextOutput" class="image-preview hidden"></div>
+                    <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
+                        <div class="loading-spinner"></div>
+                    </div>
                 </div>
             </div>
+            <!-- <div class="sample-images-section">
+                <h2>Sample Images</h2>
+                <div class="additional-images-container">
+                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample01.jpg" alt="Additional Image 1" class="additional-image" id="additionalImage1">
+                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample02.jpg" alt="Additional Image 2" class="additional-image" id="additionalImage2">
+                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample03.jpg" alt="Additional Image 3" class="additional-image" id="additionalImage3">
+                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample05.jpg" alt="Additional Image 5" class="additional-image" id="additionalImage5">
+                </div>
+            </div> -->
         </div>
     </div>
     <script>
-        let selectedModelUrl = "https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas";
-        let compressedFile = null;  // 圧縮されたファイルを保存
+        const models = {
+            trimming20241011: 'https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas',
+            trimming20240925: 'https://ndcs28dp14.execute-api.ap-northeast-1.amazonaws.com/tas',
+        };
 
-        // Cookie management functions
+        const modelDescriptions = {
+            // trimming20240925: "",
+            // trimming20241011: "",
+        };
+
+        let selectedModelUrl = models.objectDetection;
+        let compressedFile = null;
+
         function setCookie(name, value, days) {
             const d = new Date();
             d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -60,15 +84,35 @@
         }
 
         function initializePage() {
-            updateDescription('trimmingModel');
+            selectModel('objectDetection');
+            const savedApiKey = getCookie("apiKey");
+            if (savedApiKey) {
+                document.getElementById('apiKeyInput').value = savedApiKey;
+            }
+            updateDescription('objectDetection');
+        }
+
+        function selectModel(modelName) {
+            if (models[modelName]) {
+                selectedModelUrl = models[modelName];
+                setActiveTab(modelName);
+                updateDescription(modelName);
+            } else {
+                console.error(`Model "${modelName}" is not defined.`);
+            }
+        }
+
+        function setActiveTab(modelName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.model === modelName);
+            });
         }
 
         function updateDescription(modelName) {
             const descriptionElement = document.getElementById('modelDescription');
-            descriptionElement.textContent = "選択したモデルはトリミングを行います。画像の不要な部分を自動でトリミングします。";
+            descriptionElement.textContent = modelDescriptions[modelName];
         }
 
-        // Handle file input change to display image preview and resize/compress if needed
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -77,8 +121,8 @@
                     const img = new Image();
                     img.src = e.target.result;
                     img.onload = function() {
-                        const resizedImage = resizeImage(img); // リサイズ処理
-                        compressImage(resizedImage, file, 2);  // 圧縮処理
+                        const resizedImage = resizeImage(img);
+                        compressImage(resizedImage, file, 2);
                     };
                 };
                 reader.readAsDataURL(file);
@@ -91,7 +135,6 @@
             let height = img.height;
 
             const MAX_LENGTH = 1920;
-
             if (width > height && width > MAX_LENGTH) {
                 height = height * (MAX_LENGTH / width);
                 width = MAX_LENGTH;
@@ -171,8 +214,13 @@
                 .then(response => response.json())
                 .then(data => {
                     const processedData = JSON.parse(data.body);
-                    const base64OutputImg = processedData.image;
-                    displayProcessedImage(base64OutputImg);
+                    
+                    if (processedData.text) {
+                        displayProcessedText(processedData.text);
+                    } else if (processedData.image) {
+                        displayProcessedImage(processedData.image);
+                    }
+
                     toggleLoadingState(false);
                 })
                 .catch(error => {
@@ -181,6 +229,24 @@
                 });
             };
             reader.readAsDataURL(file);
+        }
+
+        function displayProcessedText(text) {
+            const processedTextOutput = document.getElementById('processedTextOutput');
+            const processedImage = document.getElementById('processedImage');
+
+            processedImage.classList.add('hidden');
+            processedTextOutput.innerHTML = text.replace(/\n/g, '<br>');
+            processedTextOutput.classList.remove('hidden');
+        }
+
+        function displayProcessedImage(base64Image) {
+            const processedImage = document.getElementById('processedImage');
+            const processedTextOutput = document.getElementById('processedTextOutput');
+            
+            processedTextOutput.classList.add('hidden');
+            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
+            processedImage.classList.remove('hidden');
         }
 
         function toggleLoadingState(isLoading) {
@@ -197,12 +263,41 @@
             }
         }
 
-        function displayProcessedImage(base64Image) {
-            const processedImage = document.getElementById('processedImage');
-            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
-            processedImage.classList.remove('hidden');
+        document.querySelectorAll('.additional-image').forEach(img => {
+            img.addEventListener('click', function() {
+                setImageAsFileInput(img.src);
+            });
+        });
+
+        function setImageAsFileInput(imageUrl) {
+            fetch(imageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+                    const file = new File([blob], fileName, { type: blob.type });
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const resizedImage = resizeImage(img);
+                            compressImage(resizedImage, file, 2);
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
 
+        document.querySelector('.sidebar').addEventListener('click', function(event) {
+            if (event.target.classList.contains('tab')) {
+                const modelName = event.target.dataset.model;
+                selectModel(modelName);
+            }
+        });
     </script>
 </body>
 </html>
