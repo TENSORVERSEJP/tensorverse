@@ -6,9 +6,42 @@
     <title>TENSORVERSE</title>
     <link rel="stylesheet" href="stylesheet.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .title-logo {
+            text-align: center;
+            margin-bottom: 0px;
+        }
+
+        .result-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .text-output {
+            margin-top: 10px; /* Add some space between image and text */
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .loading-spinner-overlay {
+            position: absolute;
+            display: none;
+        }
+    </style>
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
+        <div class="tab" data-model="trimming20241004">2024.10.4 ver</div>
         <div class="tab" data-model="trimming20240930">2024.9.30 ver</div>
         <div class="tab" data-model="trimming20240925">2024.9.25 ver</div>
     </div>
@@ -18,9 +51,7 @@
             <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/logo.png" alt="Logo">
         </div>
         <div class="upload-container">
-            <div id="modelDescription" class="model-description">
-                <!-- デフォルトの説明文をここに表示 -->
-            </div>
+            <div id="modelDescription" class="model-description"></div>
             <div class="input-section">
                 <input type="password" id="apiKeyInput" placeholder="Enter API Key">
                 <input type="file" id="fileInput" accept="image/*">
@@ -32,25 +63,17 @@
                 </div>
                 <div class="result-column">
                     <img id="processedImage" class="image-preview hidden" alt="Processed Image">
-                    <div id="processedTextOutput" class="image-preview hidden"></div>
+                    <div id="processedTextOutput" class="text-output hidden"></div>
                     <div id="loadingSpinnerOverlay" class="loading-spinner-overlay hidden">
                         <div class="loading-spinner"></div>
                     </div>
                 </div>
             </div>
-            <!-- <div class="sample-images-section">
-                <h2>Sample Images</h2>
-                <div class="additional-images-container">
-                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample01.jpg" alt="Additional Image 1" class="additional-image" id="additionalImage1">
-                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample02.jpg" alt="Additional Image 2" class="additional-image" id="additionalImage2">
-                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample03.jpg" alt="Additional Image 3" class="additional-image" id="additionalImage3">
-                    <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample05.jpg" alt="Additional Image 5" class="additional-image" id="additionalImage5">
-                </div>
-            </div> -->
         </div>
     </div>
     <script>
         const models = {
+            trimming20241004: 'https://ykegxc6qo7.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240930: 'https://pffirgfhvh.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
@@ -58,7 +81,7 @@
         const modelDescriptions = {
         };
 
-        let selectedModelUrl = models.trimming20240925;
+        let selectedModelUrl = models.trimming20241004;
         let compressedFile = null;
 
         function setCookie(name, value, days) {
@@ -82,12 +105,12 @@
         }
 
         function initializePage() {
-            selectModel('trimming20240930');
+            selectModel('trimming20241004');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('trimming20240930');
+            updateDescription('trimming20241004');
         }
 
         function selectModel(modelName) {
@@ -120,7 +143,7 @@
                     img.src = e.target.result;
                     img.onload = function() {
                         const resizedImage = resizeImage(img);
-                        compressImage(resizedImage, file, 2);
+                        compressImage(resizedImage, file, 4);
                     };
                 };
                 reader.readAsDataURL(file);
@@ -212,13 +235,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const processedData = JSON.parse(data.body);
-                    
-                    if (processedData.text) {
-                        displayProcessedText(processedData.text);
-                    } else if (processedData.image) {
-                        displayProcessedImage(processedData.image);
-                    }
-
+                    displayProcessedData(processedData);
                     toggleLoadingState(false);
                 })
                 .catch(error => {
@@ -229,22 +246,23 @@
             reader.readAsDataURL(file);
         }
 
-        function displayProcessedText(text) {
-            const processedTextOutput = document.getElementById('processedTextOutput');
-            const processedImage = document.getElementById('processedImage');
-
-            processedImage.classList.add('hidden');
-            processedTextOutput.innerHTML = text.replace(/\n/g, '<br>');
-            processedTextOutput.classList.remove('hidden');
-        }
-
-        function displayProcessedImage(base64Image) {
+        function displayProcessedData(data) {
             const processedImage = document.getElementById('processedImage');
             const processedTextOutput = document.getElementById('processedTextOutput');
-            
-            processedTextOutput.classList.add('hidden');
-            processedImage.src = `data:image/jpeg;base64,${base64Image}`;
-            processedImage.classList.remove('hidden');
+
+            if (data.image) {
+                processedImage.src = `data:image/jpeg;base64,${data.image}`;
+                processedImage.classList.remove('hidden');
+            } else {
+                processedImage.classList.add('hidden');
+            }
+
+            if (data.text) {
+                processedTextOutput.innerHTML = data.text.replace(/\n/g, '<br>');
+                processedTextOutput.classList.remove('hidden');
+            } else {
+                processedTextOutput.classList.add('hidden');
+            }
         }
 
         function toggleLoadingState(isLoading) {
@@ -261,40 +279,11 @@
             }
         }
 
-        document.querySelectorAll('.additional-image').forEach(img => {
-            img.addEventListener('click', function() {
-                setImageAsFileInput(img.src);
-            });
-        });
-
-        function setImageAsFileInput(imageUrl) {
-            fetch(imageUrl)
-                .then(response => response.blob())
-                .then(blob => {
-                    const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-                    const file = new File([blob], fileName, { type: blob.type });
-
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = new Image();
-                        img.src = e.target.result;
-                        img.onload = function() {
-                            const resizedImage = resizeImage(img);
-                            compressImage(resizedImage, file, 2);
-                        };
-                    };
-                    reader.readAsDataURL(file);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        }
-
-        document.querySelector('.sidebar').addEventListener('click', function(event) {
-            if (event.target.classList.contains('tab')) {
-                const modelName = event.target.dataset.model;
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const modelName = tab.dataset.model;
                 selectModel(modelName);
-            }
+            });
         });
     </script>
 </body>
