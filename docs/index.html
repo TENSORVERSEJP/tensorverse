@@ -13,7 +13,7 @@
         <div class="tab" data-model="segmentation">セグメンテーション</div>
         <div class="tab" data-model="depthEstimation">深度推定</div>
         <div class="tab" data-model="backgroundRemoval">背景除去</div>
-        <div class="tab" data-model="geminiapiOcr">OCR</div>
+        <div class="tab" data-model="generalOcr">OCR</div>
     </div>
     <div class="container">
         <div class="title-logo">
@@ -58,7 +58,7 @@
             segmentation: 'https://7plx8cens8.execute-api.ap-northeast-1.amazonaws.com/tas',
             depthEstimation: 'https://sw97avsdr8.execute-api.ap-northeast-1.amazonaws.com/tas',
             backgroundRemoval: 'https://ikpjy7mps4.execute-api.ap-northeast-1.amazonaws.com/tas',
-            geminiapiOcr: 'https://lk5avrbsqc.execute-api.ap-northeast-1.amazonaws.com/tas',
+            generalOcr: 'https://lk5avrbsqc.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
 
         const modelDescriptions = {
@@ -66,7 +66,7 @@
             segmentation: "セグメンテーション: 画像の各ピクセルをクラスに分類し、対象領域をマスクとして出力します。",
             depthEstimation: "深度推定: 画像内の各ピクセルの深度を推定し、距離情報を可視化します。",
             backgroundRemoval: "背景除去: 画像から前景と背景を分離し、背景を除去します。",
-            geminiapiOcr: "OCR: 画像中の文字を読み取ります。"
+            generalOcr: "OCR: 画像中の文字を読み取ります。"
         };
 
         let selectedModelUrl = models.objectDetection;
