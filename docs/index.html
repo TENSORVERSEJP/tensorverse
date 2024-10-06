@@ -6,7 +6,6 @@
     <title>TENSORVERSE</title>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Styles from stylesheet.css */
         body {
             margin: 0;
             padding: 0;
@@ -24,7 +23,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            /* height: 100vh; */
             padding-top: 20px;
         }
         .tab {
@@ -49,7 +47,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* margin: 5px 0; */
         }
         .upload-container {
             display: flex;
@@ -101,7 +98,6 @@
             color: white;
             padding: 15px 32px;
             text-align: center;
-            text-decoration: none;
             display: inline-block;
             font-size: 16px;
             margin: 10px 0;
@@ -195,7 +191,7 @@
                 text-align: center;
                 font-size: 0.8em;
                 flex-wrap: wrap;
-                margin-bottom: 140px;
+                margin-bottom: 0px;
             }
             .input-section {
                 display: flex;
@@ -266,10 +262,17 @@
                     <img src="https://raw.githubusercontent.com/TENSORVERSEJP/tensorverse/main/docs/assets/images/sample05.jpg" alt="Additional Image 5" class="additional-image" id="additionalImage5">
                 </div>
             </div>
+            <div class="sample-images-section">
+                <h2>Upload History</h2>
+                <div class="additional-images-container upload-history-container">
+                    <!-- Uploaded images will appear here -->
+                </div>
+            </div>
+            <p></p>
+            <p></p>
         </div>
     </div>
     <script>
-        /* JavaScript from index.html */
         const models = {
             objectDetection: 'https://649vecmu32.execute-api.ap-northeast-1.amazonaws.com/tas',
             segmentation: 'https://7plx8cens8.execute-api.ap-northeast-1.amazonaws.com/tas',
@@ -286,12 +289,15 @@
         };
         let selectedModelUrl = models.objectDetection;
         let compressedFile = null;
+        let uploadedImages = [];
+
         function setCookie(name, value, days) {
             const d = new Date();
             d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
             const expires = "expires=" + d.toUTCString();
             document.cookie = `${name}=${value}; ${expires}; path=/`;
         }
+
         function getCookie(name) {
             const cname = `${name}=`;
             const decodedCookie = decodeURIComponent(document.cookie);
@@ -304,6 +310,7 @@
             }
             return "";
         }
+
         function initializePage() {
             selectModel('generalOcr');
             const savedApiKey = getCookie("apiKey");
@@ -312,6 +319,7 @@
             }
             updateDescription('generalOcr');
         }
+
         function selectModel(modelName) {
             if (models[modelName]) {
                 selectedModelUrl = models[modelName];
@@ -321,15 +329,18 @@
                 console.error(`Model "${modelName}" is not defined.`);
             }
         }
+
         function setActiveTab(modelName) {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.model === modelName);
             });
         }
+
         function updateDescription(modelName) {
             const descriptionElement = document.getElementById('modelDescription');
             descriptionElement.textContent = modelDescriptions[modelName];
         }
+
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -345,6 +356,7 @@
                 reader.readAsDataURL(file);
             }
         });
+
         function resizeImage(img) {
             const canvas = document.createElement('canvas');
             let width = img.width;
@@ -363,10 +375,12 @@
             ctx.drawImage(img, 0, 0, width, height);
             return canvas;
         }
+
         function compressImage(canvas, file, maxSizeMB) {
             let quality = 0.8;
             compressLoop(canvas, file, quality, maxSizeMB);
         }
+
         function compressLoop(canvas, file, quality, maxSizeMB) {
             canvas.toBlob(function(blob) {
                 if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.1) {
@@ -378,6 +392,7 @@
                 }
             }, 'image/jpeg', quality);
         }
+
         function previewImage(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -387,13 +402,20 @@
             }
             reader.readAsDataURL(file);
         }
+
         document.getElementById('uploadButton').addEventListener('click', function() {
             if (compressedFile) {
+                // Preview the uploaded original image in the upload history
+                const originalImageUrl = URL.createObjectURL(compressedFile);
+                addImageToUploadHistory(originalImageUrl);
+
+                // Proceed to upload the image
                 uploadImage(compressedFile);
             } else {
                 alert('Please upload an image first.');
             }
         });
+
         function uploadImage(file) {
             const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
             if (!apiKeyInput) {
@@ -419,10 +441,12 @@
                 .then(response => response.json())
                 .then(data => {
                     const processedData = JSON.parse(data.body);
-                    if (processedData.text) {
-                        displayProcessedText(processedData.text);
-                    } else if (processedData.image) {
+                    if (processedData.image) {
+                        // Display processed image and add to upload history
                         displayProcessedImage(processedData.image);
+                        addImageToUploadHistory(`data:image/jpeg;base64,${processedData.image}`);
+                    } else if (processedData.text) {
+                        displayProcessedText(processedData.text);
                     }
                     toggleLoadingState(false);
                 })
@@ -433,6 +457,41 @@
             };
             reader.readAsDataURL(file);
         }
+
+        function addImageToUploadHistory(imageUrl) {
+            // Add the new image to the beginning of the array
+            uploadedImages.unshift(imageUrl);
+
+            // Ensure the array only stores up to 12 images
+            if (uploadedImages.length > 12) {
+                uploadedImages.pop();
+            }
+
+            // Update the upload history section
+            updateUploadHistory();
+        }
+
+        function updateUploadHistory() {
+            const uploadHistoryContainer = document.querySelector('.upload-history-container');
+            
+            // Clear the existing images
+            uploadHistoryContainer.innerHTML = '';
+
+            // Add the images from the array to the DOM
+            uploadedImages.forEach(imageUrl => {
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imgElement.classList.add('additional-image');
+                imgElement.addEventListener('click', function() {
+                    setImageAsFileInput(imgElement.src); // Make it selectable like the sample images
+                });
+                uploadHistoryContainer.appendChild(imgElement);
+            });
+        }
+
+        // Initial call to set up the upload history section
+        updateUploadHistory();
+
         function displayProcessedText(text) {
             const processedTextOutput = document.getElementById('processedTextOutput');
             const processedImage = document.getElementById('processedImage');
@@ -440,6 +499,7 @@
             processedTextOutput.innerHTML = text.replace(/\n/g, '<br>');
             processedTextOutput.classList.remove('hidden');
         }
+
         function displayProcessedImage(base64Image) {
             const processedImage = document.getElementById('processedImage');
             const processedTextOutput = document.getElementById('processedTextOutput');
@@ -447,6 +507,7 @@
             processedImage.src = `data:image/jpeg;base64,${base64Image}`;
             processedImage.classList.remove('hidden');
         }
+
         function toggleLoadingState(isLoading) {
             const uploadButton = document.getElementById('uploadButton');
             const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -460,11 +521,13 @@
                 loadingSpinnerOverlay.classList.add('hidden');
             }
         }
+
         document.querySelectorAll('.additional-image').forEach(img => {
             img.addEventListener('click', function() {
                 setImageAsFileInput(img.src);
             });
         });
+
         function setImageAsFileInput(imageUrl) {
             fetch(imageUrl)
                 .then(response => response.blob())
@@ -486,6 +549,7 @@
                     console.error('Error:', error);
                 });
         }
+
         document.querySelector('.sidebar').addEventListener('click', function(event) {
             if (event.target.classList.contains('tab')) {
                 const modelName = event.target.dataset.model;
