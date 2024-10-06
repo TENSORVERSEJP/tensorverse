@@ -24,7 +24,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            /* height: 100vh; */
             padding-top: 20px;
         }
         .tab {
@@ -71,26 +71,6 @@
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
-        }
-        .input-group {
-            position: relative;
-            width: 300px;
-        }
-        .input-group input {
-            width: 100%;
-            padding-right: 40px;
-        }
-        .input-group button {
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            background: none;
-            border: none;
-            color: #007BFF;
-            cursor: pointer;
-            padding: 0 10px;
-            font-size: 14px;
         }
         .image-preview {
             max-width: 800px;
@@ -157,12 +137,6 @@
         .hidden {
             display: none;
         }
-        .file-name-display {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #333;
-            text-align: center;
-        }
         .sample-images-section {
             margin-top: 20px;
             text-align: center;
@@ -172,6 +146,7 @@
             display: flex;
             justify-content: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
         .additional-image {
             width: 120px;
@@ -181,6 +156,62 @@
         }
         .additional-image:hover {
             transform: scale(1.1);
+        }
+        @media (max-width: 768px) {
+            .image-preview {
+                width: 90%;
+                height: auto;
+                margin-bottom: 10px;
+                object-fit: contain;
+            }
+            .preview-section {
+                display: flex;
+                align-items: flex-start;
+                gap: 1%;
+                position: relative;
+                max-width: 100%;
+                overflow-x: hidden;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 60px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding-top: 0;
+                padding-bottom: 0;
+                z-index: 1000;
+            }
+            .tab {
+                font-size: 10px;
+                padding: 5px;
+            }
+            .sample-images-section {
+                margin-top: 20px;
+                text-align: center;
+                font-size: 0.8em;
+                flex-wrap: wrap;
+                margin-bottom: 100px;
+            }
+            .input-section {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                box-sizing: border-box;
+                flex-wrap: wrap;
+                text-align: center;
+            }
+            .additional-image {
+                width: 90px;
+                height: auto;
+                cursor: pointer;
+                transition: transform 0.3s;
+            }
         }
     </style>
 </head>
