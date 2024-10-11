@@ -97,6 +97,10 @@
             height: 2em;
             width: auto;
         }
+        .button-section {
+            display: flex;
+            gap: 20px; /* ボタン間の隙間を広げる */
+        }
         button#uploadButton {
             background-color: #4CAF50;
             color: white;
@@ -113,6 +117,23 @@
         }
         button#uploadButton:hover {
             background-color: #45a049;
+        }
+        button#downloadButton {
+            background-color: #007BFF; /* ダウンロードボタンを青色に */
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        button#downloadButton:hover {
+            background-color: #0056b3;
         }
         .loading-spinner-overlay {
             position: absolute;
@@ -160,7 +181,10 @@
                 <input type="password" id="apiKeyInput" placeholder="Enter API Key">
                 <input type="file" id="fileInput" accept="image/*">
             </div>
-            <button id="uploadButton">Submit</button>
+            <div class="button-section">
+                <button id="uploadButton">Submit</button>
+                <button id="downloadButton" class="hidden">Download</button>
+            </div>
             <div class="preview-section">
                 <div class="image-column">
                     <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
@@ -182,31 +206,9 @@
             trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
 
-        const modelDescriptions = {
-        };
-
         let selectedModelUrl = models.trimming20241004;
         let compressedFile = null;
-
-        function setCookie(name, value, days) {
-            const d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = "expires=" + d.toUTCString();
-            document.cookie = `${name}=${value}; ${expires}; path=/`;
-        }
-
-        function getCookie(name) {
-            const cname = `${name}=`;
-            const decodedCookie = decodeURIComponent(document.cookie);
-            const ca = decodedCookie.split(';');
-            for (let c of ca) {
-                c = c.trim();
-                if (c.indexOf(cname) === 0) {
-                    return c.substring(cname.length, c.length);
-                }
-            }
-            return "";
-        }
+        let originalFileName = '';
 
         function initializePage() {
             selectModel('trimming20241004');
@@ -214,14 +216,12 @@
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('trimming20241004');
         }
 
         function selectModel(modelName) {
             if (models[modelName]) {
                 selectedModelUrl = models[modelName];
                 setActiveTab(modelName);
-                updateDescription(modelName);
             } else {
                 console.error(`Model "${modelName}" is not defined.`);
             }
@@ -233,14 +233,10 @@
             });
         }
 
-        function updateDescription(modelName) {
-            const descriptionElement = document.getElementById('modelDescription');
-            descriptionElement.textContent = modelDescriptions[modelName];
-        }
-
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                originalFileName = file.name.split('.').slice(0, -1).join('.');
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
@@ -299,7 +295,7 @@
                 const imagePreview = document.getElementById('imagePreview');
                 imagePreview.src = e.target.result;
                 imagePreview.classList.remove('hidden');
-            }
+            };
             reader.readAsDataURL(file);
         }
 
@@ -309,6 +305,18 @@
             } else {
                 alert('Please upload an image first.');
             }
+        });
+
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const processedImage = document.getElementById('processedImage');
+            if (!processedImage.src) {
+                alert('No image available to download.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = processedImage.src;
+            link.download = `${originalFileName}_aitrimming.jpg`;
+            link.click();
         });
 
         function uploadImage(file) {
@@ -352,20 +360,15 @@
 
         function displayProcessedData(data) {
             const processedImage = document.getElementById('processedImage');
-            const processedTextOutput = document.getElementById('processedTextOutput');
-
+            const downloadButton = document.getElementById('downloadButton');
+            
             if (data.image) {
                 processedImage.src = `data:image/jpeg;base64,${data.image}`;
                 processedImage.classList.remove('hidden');
+                downloadButton.classList.remove('hidden');
             } else {
                 processedImage.classList.add('hidden');
-            }
-
-            if (data.text) {
-                processedTextOutput.innerHTML = data.text.replace(/\n/g, '<br>');
-                processedTextOutput.classList.remove('hidden');
-            } else {
-                processedTextOutput.classList.add('hidden');
+                downloadButton.classList.add('hidden');
             }
         }
 
