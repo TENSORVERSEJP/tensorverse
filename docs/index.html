@@ -439,7 +439,7 @@
                 const base64ImageString = e.target.result.split(',')[1];
                 const payload = {
                     image: base64ImageString,
-                    code: ''
+                    apikey: apiKeyInput
                 };
                 fetch(selectedModelUrl, {
                     method: 'POST',
