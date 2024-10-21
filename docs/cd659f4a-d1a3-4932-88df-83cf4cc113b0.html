@@ -145,6 +145,7 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">
+        <div class="tab" data-model="trimming20241021">2024.10.21 ver</div>
         <div class="tab" data-model="trimming20241004">2024.10.4 ver</div>
         <div class="tab" data-model="trimming20240930">2024.9.30 ver</div>
         <div class="tab" data-model="trimming20240925">2024.9.25 ver</div>
@@ -177,6 +178,7 @@
     </div>
     <script>
         const models = {
+            trimming20241021: 'https://8j1eeounzc.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20241004: 'https://ykegxc6qo7.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240930: 'https://pffirgfhvh.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
@@ -185,7 +187,7 @@
         const modelDescriptions = {
         };
 
-        let selectedModelUrl = models.trimming20241004;
+        let selectedModelUrl = models.trimming20241021;
         let compressedFile = null;
 
         function setCookie(name, value, days) {
@@ -209,12 +211,12 @@
         }
 
         function initializePage() {
-            selectModel('trimming20241004');
+            selectModel('trimming20241021');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('trimming20241004');
+            updateDescription('trimming20241021');
         }
 
         function selectModel(modelName) {
