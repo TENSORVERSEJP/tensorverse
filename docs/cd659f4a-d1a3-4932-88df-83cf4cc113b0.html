@@ -60,10 +60,34 @@
             position: relative;
             margin-top: 20px;
         }
-        .input-section {
+            .input-section {
             display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .slider-container label {
+            margin-bottom: 5px;
+        }
+
+        button {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 10px 10px;
+            font-size: 16px;
+            cursor: pointer;
         }
         #apiKeyInput {
             width: 240px;
@@ -144,7 +168,8 @@
     </style>
 </head>
 <body onload="initializePage()">
-    <div class="sidebar">
+    <div class="sidebar">  
+        <div class="tab" data-model="trimming20241108">--- 作業中 ---</div>
         <div class="tab" data-model="trimming20241021">2024.10.21 ver</div>
         <div class="tab" data-model="trimming20241004">2024.10.4 ver</div>
         <div class="tab" data-model="trimming20240930">2024.9.30 ver</div>
@@ -162,6 +187,33 @@
                 <input type="file" id="fileInput" accept="image/*">
             </div>
             <button id="uploadButton">Submit</button>
+            <div class="input-section">
+                <div class="slider-container">
+                    <label for="topSlider">Top</label>
+                    <input type="range" id="topSlider" min="-2.0" max="2.0" step="0.1" value="0" 
+                           oninput="document.getElementById('topValue').innerText = parseFloat(this.value).toFixed(1)">
+                    <div id="topValue" class="slider-value">0.0</div>
+                </div>
+                <div class="slider-container">
+                    <label for="bottomSlider">Bottom</label>
+                    <input type="range" id="bottomSlider" min="-2.0" max="2.0" step="0.1" value="0" 
+                           oninput="document.getElementById('bottomValue').innerText = parseFloat(this.value).toFixed(1)">
+                    <div id="bottomValue" class="slider-value">0.0</div>
+                </div>
+                <div class="slider-container">
+                    <label for="leftSlider">Left</label>
+                    <input type="range" id="leftSlider" min="-2.0" max="2.0" step="0.1" value="0" 
+                           oninput="document.getElementById('leftValue').innerText = parseFloat(this.value).toFixed(1)">
+                    <div id="leftValue" class="slider-value">0.0</div>
+                </div>
+                <div class="slider-container">
+                    <label for="rightSlider">Right</label>
+                    <input type="range" id="rightSlider" min="-2.0" max="2.0" step="0.1" value="0" 
+                           oninput="document.getElementById('rightValue').innerText = parseFloat(this.value).toFixed(1)">
+                    <div id="rightValue" class="slider-value">0.0</div>
+                </div>
+                <button onclick="resetSliders()">Reset</button>
+            </div>
             <div class="preview-section">
                 <div class="image-column">
                     <img id="imagePreview" class="image-preview hidden" alt="Image Preview">
@@ -174,29 +226,28 @@
                     </div>
                 </div>
             </div>
+            <p></p>
         </div>
     </div>
     <script>
         const models = {
+            trimming20241108: 'https://archdac60m.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20241021: 'https://8j1eeounzc.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20241004: 'https://ykegxc6qo7.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240930: 'https://pffirgfhvh.execute-api.ap-northeast-1.amazonaws.com/tas',
             trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
-
-        const modelDescriptions = {
-        };
-
-        let selectedModelUrl = models.trimming20241021;
+    
+        let selectedModelUrl = models.trimming20241108;
         let compressedFile = null;
-
+    
         function setCookie(name, value, days) {
             const d = new Date();
             d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
             const expires = "expires=" + d.toUTCString();
             document.cookie = `${name}=${value}; ${expires}; path=/`;
         }
-
+    
         function getCookie(name) {
             const cname = `${name}=`;
             const decodedCookie = decodeURIComponent(document.cookie);
@@ -209,37 +260,30 @@
             }
             return "";
         }
-
+    
         function initializePage() {
-            selectModel('trimming20241021');
+            selectModel('trimming20241108');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
             }
-            updateDescription('trimming20241021');
         }
-
+    
         function selectModel(modelName) {
             if (models[modelName]) {
                 selectedModelUrl = models[modelName];
                 setActiveTab(modelName);
-                updateDescription(modelName);
             } else {
                 console.error(`Model "${modelName}" is not defined.`);
             }
         }
-
+    
         function setActiveTab(modelName) {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.model === modelName);
             });
         }
-
-        function updateDescription(modelName) {
-            const descriptionElement = document.getElementById('modelDescription');
-            descriptionElement.textContent = modelDescriptions[modelName];
-        }
-
+    
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -255,12 +299,12 @@
                 reader.readAsDataURL(file);
             }
         });
-
+    
         function resizeImage(img) {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-
+    
             const MAX_LENGTH = 1920;
             if (width > height && width > MAX_LENGTH) {
                 height = height * (MAX_LENGTH / width);
@@ -269,20 +313,20 @@
                 width = width * (MAX_LENGTH / height);
                 height = MAX_LENGTH;
             }
-
+    
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-
+    
             return canvas;
         }
-
+    
         function compressImage(canvas, file, maxSizeMB) {
             let quality = 0.8;
             compressLoop(canvas, file, quality, maxSizeMB);
         }
-
+    
         function compressLoop(canvas, file, quality, maxSizeMB) {
             canvas.toBlob(function(blob) {
                 if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.1) {
@@ -294,7 +338,7 @@
                 }
             }, 'image/jpeg', quality);
         }
-
+    
         function previewImage(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -304,7 +348,7 @@
             }
             reader.readAsDataURL(file);
         }
-
+    
         document.getElementById('uploadButton').addEventListener('click', function() {
             if (compressedFile) {
                 uploadImage(compressedFile);
@@ -312,24 +356,43 @@
                 alert('Please upload an image first.');
             }
         });
-
+    
         function uploadImage(file) {
             const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
+            const top = parseFloat(document.getElementById('topSlider').value);
+            const bottom = parseFloat(document.getElementById('bottomSlider').value);
+            const left = parseFloat(document.getElementById('leftSlider').value);
+            const right = parseFloat(document.getElementById('rightSlider').value);
+    
             if (!apiKeyInput) {
                 alert('Please enter your API key.');
                 return;
             }
-
+    
+            // top, bottom, left, rightの値を検証
+            if (isNaN(top) || isNaN(bottom) || isNaN(left) || isNaN(right) ||
+                top < -2.0 || top > 2.0 ||
+                bottom < -2.0 || bottom > 2.0 ||
+                left < -2.0 || left > 2.0 ||
+                right < -2.0 || right > 2.0) {
+                alert('Please enter valid values for top, bottom, left, and right between -1.0 and 1.0.');
+                return;
+            }
+    
             toggleLoadingState(true);
-
+    
             const reader = new FileReader();
             reader.onload = function(e) {
                 const base64ImageString = e.target.result.split(',')[1];
                 const payload = {
                     image: base64ImageString,
-                    apikey: apiKeyInput
+                    apikey: apiKeyInput,
+                    top_margin: top,
+                    bottom_margin: bottom,
+                    left_margin: left,
+                    right_margin: right
                 };
-
+    
                 fetch(selectedModelUrl, {
                     method: 'POST',
                     headers: {
@@ -351,18 +414,18 @@
             };
             reader.readAsDataURL(file);
         }
-
+    
         function displayProcessedData(data) {
             const processedImage = document.getElementById('processedImage');
             const processedTextOutput = document.getElementById('processedTextOutput');
-
+    
             if (data.image) {
                 processedImage.src = `data:image/jpeg;base64,${data.image}`;
                 processedImage.classList.remove('hidden');
             } else {
                 processedImage.classList.add('hidden');
             }
-
+    
             if (data.text) {
                 processedTextOutput.innerHTML = data.text.replace(/\n/g, '<br>');
                 processedTextOutput.classList.remove('hidden');
@@ -370,7 +433,7 @@
                 processedTextOutput.classList.add('hidden');
             }
         }
-
+    
         function toggleLoadingState(isLoading) {
             const uploadButton = document.getElementById('uploadButton');
             const loadingSpinnerOverlay = document.getElementById('loadingSpinnerOverlay');
@@ -384,13 +447,28 @@
                 loadingSpinnerOverlay.classList.add('hidden');
             }
         }
-
+    
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const modelName = tab.dataset.model;
                 selectModel(modelName);
             });
         });
+
+        function resetSliders() {
+        const sliders = [
+            { id: 'topSlider', valueId: 'topValue' },
+            { id: 'bottomSlider', valueId: 'bottomValue' },
+            { id: 'leftSlider', valueId: 'leftValue' },
+            { id: 'rightSlider', valueId: 'rightValue' }
+        ];
+        
+        sliders.forEach(slider => {
+            document.getElementById(slider.id).value = 0;
+            document.getElementById(slider.valueId).innerText = '0.0';
+        });
+    }
     </script>
+    
 </body>
 </html>
