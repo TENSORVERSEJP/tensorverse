@@ -169,7 +169,7 @@
 </head>
 <body onload="initializePage()">
     <div class="sidebar">  
-        <div class="tab" data-model="trimming20241108">--- 作業中 ---</div>
+        <!-- <div class="tab" data-model="trimming20241108">--- 作業中 ---</div> -->
         <div class="tab" data-model="trimming20241021">2024.10.21 ver</div>
         <div class="tab" data-model="trimming20241004">2024.10.4 ver</div>
         <div class="tab" data-model="trimming20240930">2024.9.30 ver</div>
@@ -238,7 +238,7 @@
             trimming20240925: 'https://xcmecnss80.execute-api.ap-northeast-1.amazonaws.com/tas',
         };
     
-        let selectedModelUrl = models.trimming20241108;
+        let selectedModelUrl = models.trimming20241021;
         let compressedFile = null;
     
         function setCookie(name, value, days) {
@@ -262,7 +262,7 @@
         }
     
         function initializePage() {
-            selectModel('trimming20241108');
+            selectModel('trimming20241021');
             const savedApiKey = getCookie("apiKey");
             if (savedApiKey) {
                 document.getElementById('apiKeyInput').value = savedApiKey;
