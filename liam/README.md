@@ -1,1 +1,0 @@
-[https://liambx.com/erd/p/github.com/TENSORVERSEJP/tensorverse/blob/main/liam/schema.rb](https://liambx.com/erd/p/github.com/TENSORVERSEJP/tensorverse/blob/main/liam/schema.rb)
